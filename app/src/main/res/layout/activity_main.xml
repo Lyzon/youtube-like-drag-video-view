@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.zhixin.raulx.youtubedemo.MainActivity">
+
+    <ListView
+        android:background="@android:color/holo_blue_dark"
+        android:id="@+id/list_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </ListView>
+
+    <com.zhixin.raulx.youtubedemo.YouTubeVideoView
+        android:background="@android:color/background_dark"
+        android:visibility="invisible"
+        android:id="@+id/youtube_view"
+        android:layout_gravity="end"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextureView
+            android:background="@android:color/darker_gray"
+            android:layout_gravity="end"
+            android:id="@+id/video_view"
+            android:layout_width="match_parent"
+            android:layout_height="208dp"
+            />
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:id="@+id/detail_view"
+            android:background="@android:color/holo_red_dark"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <Button
+                android:text="Button"
+                android:layout_marginTop="150dp"
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+        </LinearLayout>
+
+    </com.zhixin.raulx.youtubedemo.YouTubeVideoView>
+
+
+</FrameLayout>

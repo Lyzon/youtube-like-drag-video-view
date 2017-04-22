@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">YouTubeDemo</string>
+
+
+    <array name="program_list">
+        <item>白日梦想家</item>
+        <item>乔布斯传</item>
+        <item>硅谷</item>
+        <item>Batman VS Superman</item>
+        <item>Top Gear</item>
+        <item>生化危机</item>
+        <item>魔兽</item>
+        <item>蜘蛛侠：Home Coming</item>
+        <item>雷神3：诸神黄昏</item>
+        <item>人民的名义</item>
+        <item>四月是你的谎言</item>
+        <item>刀剑神域</item>
+        <item>金刚狼3</item>
+        <item>白日梦想家</item>
+        <item>乔布斯传</item>
+        <item>硅谷</item>
+        <item>Batman VS Superman</item>
+        <item>Top Gear</item>
+        <item>生化危机</item>
+        <item>魔兽</item>
+        <item>蜘蛛侠：Home Coming</item>
+        <item>雷神3：诸神黄昏</item>
+        <item>人民的名义</item>
+        <item>四月是你的谎言</item>
+        <item>刀剑神域</item>
+        <item>金刚狼3</item>
+    </array>
+
+</resources>
