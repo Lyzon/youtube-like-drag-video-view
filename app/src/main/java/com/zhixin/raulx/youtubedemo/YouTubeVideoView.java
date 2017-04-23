@@ -1,32 +1,30 @@
 package com.zhixin.raulx.youtubedemo;
 
+/**
+ * Created by laoyongzhi on 2017/4/15.
+ */
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-/**
- * Created by laoyongzhi on 2017/4/15.
- */
 
 public class YouTubeVideoView extends LinearLayout {
 
-
-    //TODO
-    public interface Callback{
+    interface Callback{
         void onVideoViewHide();
         void onVideoClick();
     }
 
-    //单机以及消失时的回调
+    //单击以及消失时的回调
     private Callback mCallback;
 
     private final static String TAG = "YouTubeVideoView";
@@ -114,7 +112,6 @@ public class YouTubeVideoView extends LinearLayout {
 
         private int dy;//和上一次滑动的差值 设置为全局变量是因为 UP里也要使用
 
-        private float percent;
         private boolean isClick;
 
         private VelocityTracker tracker;
@@ -134,13 +131,10 @@ public class YouTubeVideoView extends LinearLayout {
                     tracker.addMovement(ev);
                     dy = y - mLastY; //和上一次滑动的差值
                     int dx = x - mLastX;
-                    int newMarY = mVideoWrapper.getMargin() + dy;
-                    int newMarX = mVideoWrapper.getMarginRight() - dx;
+                    int newMarY = mVideoWrapper.getMargin() + dy; //新的marginTop值
+                    int newMarX = mVideoWrapper.getMarginRight() - dx;//新的marginRight值
                     int dDownY = y - mDownY;
                     int dDownX = x - mDownX; // 从点击点开始产生的的差值
-
-                    //由差值算出应改变的 宽高百分比
-                    percent = dDownY / allScrollHeight * 0.5f;
 
                     //如果滑动达到一定距离
                     if (Math.abs(dDownX) > 20 || Math.abs(dDownY) > 20) {
@@ -148,14 +142,13 @@ public class YouTubeVideoView extends LinearLayout {
                         if (Math.abs(dDownX) > Math.abs(dDownY) && canDismiss) {//如果X>Y 且能滑动关闭
                             mVideoWrapper.setMarginRight(newMarX);
                         } else
-                            updateVideoView(percent, newMarY); //否则更新大小
+                            updateVideoView(newMarY); //否则更新大小
                     }
                     break;
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
 
                     if(isClick){
-
                         if(nowStateScale == 1f ){
                             if(mCallback != null)
                                 mCallback.onVideoClick();
@@ -166,7 +159,6 @@ public class YouTubeVideoView extends LinearLayout {
                             setLayoutParams(params);
                             goMax();
                         }
-
                         break;
                     }
 
@@ -191,6 +183,39 @@ public class YouTubeVideoView extends LinearLayout {
         }
     }
 
+    private void updateVideoView(int m) {
+
+        if(nowStateScale == 0.5f) {
+            ViewGroup.LayoutParams params = getLayoutParams();
+            params.width = -1;
+            params.height = -1;
+            setLayoutParams(params);
+        }
+
+        canDismiss = false;
+
+        if(m > allScrollHeight)
+            m = (int)allScrollHeight;
+        if(m < 0)
+            m = 0;
+
+        float marginPercent = (allScrollHeight - m) / allScrollHeight;
+        float videoPercent = MIN_RATIO + (1f - MIN_RATIO) * marginPercent;
+
+        mVideoWrapper.setWidth(originalWidth * videoPercent);
+        mVideoWrapper.setHeight(originalHeight * videoPercent);
+
+        mDetailView.setAlpha(marginPercent);
+        this.getBackground().setAlpha((int)(marginPercent * 255));
+
+        int mr = (int) ((1f - marginPercent) * marginPx); //VideoView右边和详情View 上方的margin
+        mVideoWrapper.setZ(mr / 2);
+
+        mVideoWrapper.setMargin(m);
+        mVideoWrapper.setMarginRight(mr);
+        mVideoWrapper.setDetailMargin(mr);
+    }
+
     private void dismissView(){
         ObjectAnimator anim = ObjectAnimator.ofFloat(mVideoView, "alpha", 1f, 0);
         anim.addListener(new AnimatorListenerAdapter()
@@ -208,7 +233,6 @@ public class YouTubeVideoView extends LinearLayout {
             mCallback.onVideoViewHide();
     }
 
-
     private void confirmState(float v ,int dy) { //dy用于判断是否反方向滑动了
 
         //如果手指抬起时宽度达到一定值 或者 速度达到一定值 则改变状态
@@ -224,7 +248,6 @@ public class YouTubeVideoView extends LinearLayout {
                 goMin();
         }
     }
-
 
     public void goMax() {
         ObjectAnimator.ofFloat(mVideoWrapper, "width", mVideoWrapper.getWidth(), originalWidth).setDuration(200).start();
@@ -280,82 +303,31 @@ public class YouTubeVideoView extends LinearLayout {
         goMax();
     }
 
-    private void updateVideoView(float p, int m) {
-
-        if(nowStateScale == 0.5f) {
-            ViewGroup.LayoutParams params = getLayoutParams();
-            params.width = -1;
-            params.height = -1;
-            setLayoutParams(params);
-        }
-
-        canDismiss = false;
-
-        float w = originalWidth * (nowStateScale - p);
-        float h = originalHeight * (nowStateScale - p);
-
-        //height 只能是最大值  最小值之间
-        if (h > originalHeight) {
-            h = originalHeight;
-            m = 0;
-        } else if (h < MIN_RATIO * originalHeight) {
-            h = MIN_RATIO * originalHeight;
-            m = (int) allScrollHeight;
-        }
-
-        if (w > originalWidth) {
-            w = originalWidth;
-            m = 0;
-        } else if (w < MIN_RATIO * originalWidth) {
-            w = MIN_RATIO * originalWidth;
-            m = (int) allScrollHeight;
-        }
-
-        mVideoWrapper.setHeight(h);
-        mVideoWrapper.setWidth(w);
-
-        float totalPercent = (allScrollHeight - m) / allScrollHeight;
-
-        Log.d(TAG,">>>>p "+ String.valueOf(nowStateScale - p) +"         totalp"+totalPercent);
-
-        mDetailView.setAlpha(totalPercent);
-        this.getBackground().setAlpha((int)(totalPercent * 255));
-
-        int mr = (int) ((1f - totalPercent) * marginPx); //VideoView右边和详情View 上方的margin
-        mVideoWrapper.setZ(mr / 2);
-
-        mVideoWrapper.setMargin(m);
-        mVideoWrapper.setMarginRight(mr);
-        mVideoWrapper.setDetailMargin(mr);
-
-    }
-
     public void setCallback(Callback callback){
         mCallback = callback;
     }
-
 
     private class VideoViewWrapper {
         private View mVideoView;
         private LinearLayout.LayoutParams params;
         private LinearLayout.LayoutParams detailParams;
 
-        public VideoViewWrapper(View target) {
+        private VideoViewWrapper(View target) {
             mVideoView = target;
             params = (LinearLayout.LayoutParams) mVideoView.getLayoutParams();
             detailParams = (LinearLayout.LayoutParams) mDetailView.getLayoutParams();
             params.gravity = Gravity.END;
         }
 
-        public int getWidth() {
+        private int getWidth() {
             return params.width < 0 ? originalWidth : params.width;
         }
 
-        public int getHeight() {
+        private int getHeight() {
             return params.height < 0 ? originalHeight : params.height;
         }
 
-        public void setWidth(float width) {
+        private void setWidth(float width) {
             if (width == originalWidth) {
                 params.width = -1;
                 params.setMargins(0, 0, 0, 0);
@@ -365,47 +337,47 @@ public class YouTubeVideoView extends LinearLayout {
             mVideoView.setLayoutParams(params);
         }
 
-        public void setHeight(float height) {
+        private void setHeight(float height) {
             params.height = (int) height;
             mVideoView.setLayoutParams(params);
         }
 
-        public void setMargin(int m) {
+        private void setMargin(int m) {
             params.topMargin = m;
             mVideoView.setLayoutParams(params);
         }
 
-        public int getMargin() {
+        private int getMargin() {
             return params.topMargin;
         }
 
-        public void setMarginRight(int mr) {
+        private void setMarginRight(int mr) {
             params.rightMargin = mr;
             mVideoView.setLayoutParams(params);
         }
 
-        public int getMarginRight() {
+        private int getMarginRight() {
             return params.rightMargin;
         }
 
-        public void setZ(float z) {
+        private void setZ(float z) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
                 mVideoView.setTranslationZ(z);
         }
 
-        public float getZ() {
+        private float getZ() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
                 return mVideoView.getTranslationZ();
             else
                 return 0;
         }
 
-        public void setDetailMargin(int t) {
+        private void setDetailMargin(int t) {
             detailParams.topMargin = t;
             mDetailView.setLayoutParams(detailParams);
         }
 
-        public int getDetailMargin() {
+        private int getDetailMargin() {
             return detailParams.topMargin;
         }
 

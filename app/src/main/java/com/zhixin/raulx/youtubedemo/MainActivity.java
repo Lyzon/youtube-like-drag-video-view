@@ -4,6 +4,7 @@ import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -102,6 +103,15 @@ public class MainActivity extends AppCompatActivity implements YouTubeVideoView.
             mMediaPlayer.stop();
         }
         mMediaPlayer.release();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && mYouTubeVideoView.getNowStateScale() == 1f){
+            mYouTubeVideoView.goMin();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
 }

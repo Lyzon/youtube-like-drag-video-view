@@ -23,7 +23,6 @@
         android:layout_height="match_parent">
 
         <TextureView
-            android:background="@android:color/darker_gray"
             android:layout_gravity="end"
             android:id="@+id/video_view"
             android:layout_width="match_parent"
