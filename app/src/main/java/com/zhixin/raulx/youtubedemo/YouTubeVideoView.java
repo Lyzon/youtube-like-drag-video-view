@@ -6,8 +6,10 @@ package com.zhixin.raulx.youtubedemo;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.Gravity;
@@ -19,15 +21,14 @@ import android.widget.LinearLayout;
 
 public class YouTubeVideoView extends LinearLayout {
 
-    interface Callback{
+    interface Callback {
         void onVideoViewHide();
+
         void onVideoClick();
     }
 
     //单击以及消失时的回调
     private Callback mCallback;
-
-    private final static String TAG = "YouTubeVideoView";
 
     // 可拖动的videoView 和下方的详情View
     private View mVideoView;
@@ -36,27 +37,28 @@ public class YouTubeVideoView extends LinearLayout {
     private VideoViewWrapper mVideoWrapper;
 
     //滑动区间,取值为是videoView最小化时距离屏幕顶端的高度
-    private float allScrollHeight;
+    private float allScrollY;
 
-    //1f为初始状态，0.5f为最小状态
+    //1f为初始状态，0.5f或0.25f(横屏时)为最小状态
     private float nowStateScale;
+    //最小的缩放比例
+    private float MIN_RATIO = 0.5f;
+    //播放器比例
+    private static final float VIDEO_RATIO = 16f / 9f;
 
-    //是否是第一次Layout，用于获取播放器初始宽高
-    private boolean isFirstLayout = true;
+    //是否是第一次Measure，用于获取播放器初始宽高
+    private boolean isFirstMeasure = true;
 
     //VideoView初始宽高
     private int originalWidth;
     private int originalHeight;
-
-    //最小的缩放比例
-    private static final float MIN_RATIO = 0.5f;
 
     //最小时距离屏幕右边以及下边的 DP值 初始化时会转化为PX
     private static final int MARGIN_DP = 12;
     private int marginPx;
 
     //是否可以横滑删除
-    private boolean canDismiss;
+    private boolean canHide;
 
     public YouTubeVideoView(Context context) {
         this(context, null);
@@ -68,7 +70,6 @@ public class YouTubeVideoView extends LinearLayout {
 
     public YouTubeVideoView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-
     }
 
     @Override
@@ -90,15 +91,25 @@ public class YouTubeVideoView extends LinearLayout {
         nowStateScale = 1f;
     }
 
+
     @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-        if (isFirstLayout) {
-            originalWidth = mVideoView.getMeasuredWidth();
-            originalHeight = mVideoView.getMeasuredHeight();
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (isFirstMeasure) {
+            //初始化宽高
+            originalWidth = mVideoView.getContext().getResources().getDisplayMetrics().widthPixels;
+            originalHeight = (int) (originalWidth / VIDEO_RATIO);
+            ViewGroup.LayoutParams lp = mVideoView.getLayoutParams();
+            lp.width = originalWidth;
+            lp.height = originalHeight;
+            mVideoView.setLayoutParams(lp);
+
+            if (mVideoView.getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE)
+                MIN_RATIO = 0.25f;
             //滑动区间,取值为是videoView最小化时距离屏幕顶端的高度 也就是最小化时的marginTop
-            allScrollHeight = this.getHeight() - MIN_RATIO * originalHeight - marginPx;
-            isFirstLayout = false;
+            allScrollY = this.getMeasuredHeight() - MIN_RATIO * originalHeight - marginPx;
+            isFirstMeasure = false;
         }
     }
 
@@ -138,8 +149,8 @@ public class YouTubeVideoView extends LinearLayout {
 
                     //如果滑动达到一定距离
                     if (Math.abs(dDownX) > 20 || Math.abs(dDownY) > 20) {
-                        isClick = false ;
-                        if (Math.abs(dDownX) > Math.abs(dDownY) && canDismiss) {//如果X>Y 且能滑动关闭
+                        isClick = false;
+                        if (Math.abs(dDownX) > Math.abs(dDownY) && canHide) {//如果X>Y 且能滑动关闭
                             mVideoWrapper.setMarginRight(newMarX);
                         } else
                             updateVideoView(newMarY); //否则更新大小
@@ -148,11 +159,11 @@ public class YouTubeVideoView extends LinearLayout {
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_UP:
 
-                    if(isClick){
-                        if(nowStateScale == 1f ){
-                            if(mCallback != null)
+                    if (isClick) {
+                        if (nowStateScale == 1f) {
+                            if (mCallback != null)
                                 mCallback.onVideoClick();
-                        } else{
+                        } else {
                             ViewGroup.LayoutParams params = getLayoutParams();
                             params.width = -1;
                             params.height = -1;
@@ -167,13 +178,13 @@ public class YouTubeVideoView extends LinearLayout {
                     tracker.clear();
                     tracker.recycle();
 
-                    if (canDismiss) {
+                    if (canHide) {
                         if (yVelocity > 20 || Math.abs(mVideoWrapper.getMarginRight()) > MIN_RATIO * originalWidth)
                             dismissView();
                         else
                             goMin();
                     } else
-                        confirmState(yVelocity,dy);
+                        confirmState(yVelocity, dy);
                     break;
             }
 
@@ -185,28 +196,28 @@ public class YouTubeVideoView extends LinearLayout {
 
     private void updateVideoView(int m) {
 
-        if(nowStateScale == 0.5f) {
+        if (nowStateScale == MIN_RATIO) {
             ViewGroup.LayoutParams params = getLayoutParams();
             params.width = -1;
             params.height = -1;
             setLayoutParams(params);
         }
 
-        canDismiss = false;
+        canHide = false;
 
-        if(m > allScrollHeight)
-            m = (int)allScrollHeight;
-        if(m < 0)
+        if (m > allScrollY)
+            m = (int) allScrollY;
+        if (m < 0)
             m = 0;
 
-        float marginPercent = (allScrollHeight - m) / allScrollHeight;
+        float marginPercent = (allScrollY - m) / allScrollY;
         float videoPercent = MIN_RATIO + (1f - MIN_RATIO) * marginPercent;
 
         mVideoWrapper.setWidth(originalWidth * videoPercent);
         mVideoWrapper.setHeight(originalHeight * videoPercent);
 
         mDetailView.setAlpha(marginPercent);
-        this.getBackground().setAlpha((int)(marginPercent * 255));
+        this.getBackground().setAlpha((int) (marginPercent * 255));
 
         int mr = (int) ((1f - marginPercent) * marginPx); //VideoView右边和详情View 上方的margin
         mVideoWrapper.setZ(mr / 2);
@@ -216,24 +227,22 @@ public class YouTubeVideoView extends LinearLayout {
         mVideoWrapper.setDetailMargin(mr);
     }
 
-    private void dismissView(){
+    private void dismissView() {
         ObjectAnimator anim = ObjectAnimator.ofFloat(mVideoView, "alpha", 1f, 0);
-        anim.addListener(new AnimatorListenerAdapter()
-        {
+        anim.addListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationEnd(Animator animation)
-            {
+            public void onAnimationEnd(Animator animation) {
                 setVisibility(INVISIBLE);
                 mVideoView.setAlpha(1f);
             }
         });
         anim.setDuration(300).start();
 
-        if(mCallback != null)
+        if (mCallback != null)
             mCallback.onVideoViewHide();
     }
 
-    private void confirmState(float v ,int dy) { //dy用于判断是否反方向滑动了
+    private void confirmState(float v, int dy) { //dy用于判断是否反方向滑动了
 
         //如果手指抬起时宽度达到一定值 或者 速度达到一定值 则改变状态
         if (nowStateScale == 1f) {
@@ -250,33 +259,38 @@ public class YouTubeVideoView extends LinearLayout {
     }
 
     public void goMax() {
-        ObjectAnimator.ofFloat(mVideoWrapper, "width", mVideoWrapper.getWidth(), originalWidth).setDuration(200).start();
-        ObjectAnimator.ofFloat(mVideoWrapper, "height", mVideoWrapper.getHeight(), originalHeight).setDuration(200).start();
-        ObjectAnimator.ofInt(mVideoWrapper, "margin", mVideoWrapper.getMargin(), 0).setDuration(200).start();
-        ObjectAnimator.ofInt(mVideoWrapper, "marginRight", mVideoWrapper.getMarginRight(), 0).setDuration(200).start();
-        ObjectAnimator.ofInt(mVideoWrapper, "detailMargin", mVideoWrapper.getDetailMargin(), 0).setDuration(200).start();
-        ObjectAnimator.ofFloat(mVideoWrapper, "z", mVideoWrapper.getZ(), 0).setDuration(200).start();
-        ObjectAnimator.ofFloat(mDetailView, "alpha", mDetailView.getAlpha(), 1f).setDuration(200).start();
-        ObjectAnimator.ofInt(this.getBackground(),"alpha",this.getBackground().getAlpha(),255).setDuration(200).start();
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(
+                ObjectAnimator.ofFloat(mVideoWrapper, "width", mVideoWrapper.getWidth(), originalWidth),
+                ObjectAnimator.ofFloat(mVideoWrapper, "height", mVideoWrapper.getHeight(), originalHeight),
+                ObjectAnimator.ofInt(mVideoWrapper, "margin", mVideoWrapper.getMargin(), 0),
+                ObjectAnimator.ofInt(mVideoWrapper, "marginRight", mVideoWrapper.getMarginRight(), 0),
+                ObjectAnimator.ofInt(mVideoWrapper, "detailMargin", mVideoWrapper.getDetailMargin(), 0),
+                ObjectAnimator.ofFloat(mVideoWrapper, "z", mVideoWrapper.getZ(), 0),
+                ObjectAnimator.ofFloat(mDetailView, "alpha", mDetailView.getAlpha(), 1f),
+                ObjectAnimator.ofInt(this.getBackground(), "alpha", this.getBackground().getAlpha(), 255)
+        );
+        set.setDuration(200).start();
         nowStateScale = 1.0f;
-        canDismiss = false;
+        canHide = false;
     }
 
     public void goMin() {
-        ObjectAnimator.ofFloat(mVideoWrapper, "width", mVideoWrapper.getWidth(), originalWidth * MIN_RATIO).setDuration(200).start();
-        ObjectAnimator.ofFloat(mVideoWrapper, "height", mVideoWrapper.getHeight(), originalHeight * MIN_RATIO).setDuration(200).start();
-        ObjectAnimator.ofInt(mVideoWrapper, "margin", mVideoWrapper.getMargin(), (int) allScrollHeight).setDuration(200).start();
-        ObjectAnimator.ofInt(mVideoWrapper, "marginRight", mVideoWrapper.getMarginRight(), marginPx).setDuration(200).start();
-        ObjectAnimator.ofInt(mVideoWrapper, "detailMargin", mVideoWrapper.getDetailMargin(), marginPx).setDuration(200).start();
-        ObjectAnimator.ofFloat(mVideoWrapper, "z", mVideoWrapper.getZ(), marginPx / 2).setDuration(200).start();
-        ObjectAnimator.ofInt(this.getBackground(),"alpha",this.getBackground().getAlpha(),0).setDuration(200).start();
-        ObjectAnimator anim = ObjectAnimator.ofFloat(mDetailView, "alpha", mDetailView.getAlpha(), 0).setDuration(200);
-        anim.addListener(new AnimatorListenerAdapter()
-        {
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(
+                ObjectAnimator.ofFloat(mVideoWrapper, "width", mVideoWrapper.getWidth(), originalWidth * MIN_RATIO),
+                ObjectAnimator.ofFloat(mVideoWrapper, "height", mVideoWrapper.getHeight(), originalHeight * MIN_RATIO),
+                ObjectAnimator.ofInt(mVideoWrapper, "margin", mVideoWrapper.getMargin(), (int) allScrollY),
+                ObjectAnimator.ofInt(mVideoWrapper, "marginRight", mVideoWrapper.getMarginRight(), marginPx),
+                ObjectAnimator.ofInt(mVideoWrapper, "detailMargin", mVideoWrapper.getDetailMargin(), marginPx),
+                ObjectAnimator.ofFloat(mVideoWrapper, "z", mVideoWrapper.getZ(), marginPx / 2),
+                ObjectAnimator.ofInt(this.getBackground(), "alpha", this.getBackground().getAlpha(), 0),
+                ObjectAnimator.ofFloat(mDetailView, "alpha", mDetailView.getAlpha(), 0)
+        );
+        set.addListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationEnd(Animator animation)
-            {
-                canDismiss = true;
+            public void onAnimationEnd(Animator animation) {
+                canHide = true;
 
                 ViewGroup.LayoutParams p = getLayoutParams();
                 p.width = -2;
@@ -286,15 +300,15 @@ public class YouTubeVideoView extends LinearLayout {
                 nowStateScale = MIN_RATIO;
             }
         });
-        anim.start();
+        set.setDuration(200).start();
     }
 
     //获取当前状态
-    public float getNowStateScale(){
+    public float getNowStateScale() {
         return nowStateScale;
     }
 
-    public void show(){
+    public void show() {
         setVisibility(VISIBLE);
         ViewGroup.LayoutParams params = getLayoutParams();
         params.width = -1;
@@ -303,7 +317,7 @@ public class YouTubeVideoView extends LinearLayout {
         goMax();
     }
 
-    public void setCallback(Callback callback){
+    public void setCallback(Callback callback) {
         mCallback = callback;
     }
 

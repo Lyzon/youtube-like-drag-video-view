@@ -45,11 +45,7 @@ public class MainActivity extends AppCompatActivity implements YouTubeVideoView.
 
         if (mMediaPlayer.isPlaying())
             return;
-        try {
-            mMediaPlayer.prepare();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
         mMediaPlayer.start();
     }
 

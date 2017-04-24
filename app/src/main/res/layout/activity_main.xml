@@ -26,25 +26,55 @@
             android:layout_gravity="end"
             android:id="@+id/video_view"
             android:layout_width="match_parent"
-            android:layout_height="208dp"
+            android:layout_height="wrap_content"
             />
 
-        <LinearLayout
-            android:orientation="vertical"
-            android:id="@+id/detail_view"
-            android:background="@android:color/holo_red_dark"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content">
 
-            <Button
-                android:text="Button"
-                android:layout_marginTop="150dp"
-                android:layout_gravity="center"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:background="@android:color/holo_red_dark"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                />
+                android:orientation="vertical">
 
-        </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:text="detail" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:text="detail" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:text="detail" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:text="detail" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:text="detail" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:text="detail" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:text="detail" />
+            </LinearLayout>
+        </ScrollView>
 
     </com.zhixin.raulx.youtubedemo.YouTubeVideoView>
 
