@@ -7,6 +7,8 @@ http://www.jianshu.com/p/62bfa86110ac
 
 ### 实现的效果图
 
+you can dowload app-release.apk to see more ...
+
 ![demo.gif](http://ac-whikwudz.clouddn.com/c72bee2243c046b52745.gif)
 
 ### 实现思路
