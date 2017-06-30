@@ -9,6 +9,8 @@ http://www.jianshu.com/p/62bfa86110ac
 
 you can dowload app-release.apk to see more ...
 
+如果github看不了图请跳转到简书查看...
+
 ![demo.gif](http://ac-whikwudz.clouddn.com/c72bee2243c046b52745.gif)
 
 ### 实现思路
